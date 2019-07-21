@@ -34,7 +34,7 @@ const fakeServerData = {
           },
           {
             name: "Hey Jude",
-            duration: 1781
+            duration: 3000
           },
           {
             name: "I Want to Hold Your Hand",
@@ -95,7 +95,7 @@ class HoursCounter extends Component {
     // reduce params:
     // 1. function
     // 2. initial state (in this case, empty list)
-    let allSongs = this.props.playlists.reduce((songs, eachPlaylist) => {
+    const allSongs = this.props.playlists.reduce((songs, eachPlaylist) => {
       return eachPlaylist.songs.concat(eachPlaylist.songs);
     }, []);
     const totalDuration = allSongs.reduce((sum, eachSong) => {
@@ -103,7 +103,7 @@ class HoursCounter extends Component {
     }, 0);
     return(
       <div style={ {...defaultStyle, width: '40%', display: 'inline-block'} } >
-        <h2 style={ {defaultStyle} }>{Math.floor(totalDuration / 3600)} Hours</h2>
+        <h2 style={ {defaultStyle} }>{ Math.floor(totalDuration / 3600) } Hours</h2> 
       </div>
     );
   }
@@ -161,6 +161,17 @@ class App extends Component {
   }
 
   render() {
+    // Creates an array of only the playlists that should be rendered based on filtering
+    // Notes:
+    // Array.filter() creates a new array of elements that will respond 'true' to the
+    // return statement.
+    // Array.map() calls the provided callback function on each element in the array.
+    let playlistsToRender = this.state.serverData.user ? 
+      this.state.serverData.user.playlists
+      .filter(playlist =>
+        playlist.name.toLowerCase().includes(
+          this.state.filterString.toLowerCase()
+      )) : [];
     return (
       <div className="App">
         {this.state.serverData.user ?    // checks if server data exists,
@@ -169,18 +180,15 @@ class App extends Component {
           <h1 style={ {...defaultStyle, "font-size": "54px"} }>
             {this.state.serverData.user.name}'s Playlist
           </h1>
-          <PlaylistCounter playlists={this.state.serverData.user.playlists} />
-          <HoursCounter playlists={this.state.serverData.user.playlists} />
+          <PlaylistCounter playlists={playlistsToRender} />
+          <HoursCounter playlists={playlistsToRender} />
           <Filter onTextChange={ text => this.setState({    // onTextChange() assigns received text to the filterString state
             filterString: text
           }) } />
-          { // Filtering logic
-            this.state.serverData.user.playlists.filter(playlist =>    // Array.filter() creates a new array of elements
-              playlist.name.toLowerCase().includes(                    // that respond 'true' to the return statement
-                this.state.filterString.toLowerCase())          
-            ).map(playlist =>     // Array.map() calls the provided callback function on each element in the array
+          { 
+            playlistsToRender.map(playlist =>
               <Playlist playlist={playlist} />
-            )
+            ) 
           }
         </div> : <h1 style={defaultStyle}>Loading!</h1>
         }
