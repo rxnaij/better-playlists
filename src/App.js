@@ -96,14 +96,14 @@ class HoursCounter extends Component {
     // 1. function
     // 2. initial state (in this case, empty list)
     let allSongs = this.props.playlists.reduce((songs, eachPlaylist) => {
-      return eachPlaylist.songs.concat(eachPlaylist.songs)
+      return eachPlaylist.songs.concat(eachPlaylist.songs);
     }, []);
-    const totalDuration = allSongs.reduce( (sum, eachSong) => {
-      return sum + eachSong.duration
+    const totalDuration = allSongs.reduce((sum, eachSong) => {
+      return sum + eachSong.duration;
     }, 0);
     return(
       <div style={ {...defaultStyle, width: '40%', display: 'inline-block'} } >
-        <h2 style={ {defaultStyle} }>{Math.floor(totalDuration / 60)} Hours</h2>
+        <h2 style={ {defaultStyle} }>{Math.floor(totalDuration / 3600)} Hours</h2>
       </div>
     );
   }
@@ -126,11 +126,11 @@ class Playlist extends Component {
     return(
       <div style={ {...defaultStyle, width: '25%', display: 'inline-block'} }>
         <img src="" alt=""/>
-        <h3>Playlist Name</h3>
+        <h3>{ this.props.playlist.name }</h3>
         <ul>
-          <li>Song 1</li>
-          <li>Song 2</li>
-          <li>Song 3</li>
+          {this.props.playlist.songs.map( song =>
+            <li>{song.name}</li>
+          )}
         </ul>
       </div>
     );
@@ -166,10 +166,11 @@ class App extends Component {
           <PlaylistCounter playlists={this.state.serverData.user.playlists} />
           <HoursCounter playlists={this.state.serverData.user.playlists} />
           <Filter />
-          <Playlist />
-          <Playlist />
-          <Playlist />
-          <Playlist />
+          {
+            this.state.serverData.user.playlists.map(playlist => 
+              <Playlist playlist={playlist} />
+            )
+          }
         </div> : <h1 style={defaultStyle}>Loading!</h1>
         }
       </div>
