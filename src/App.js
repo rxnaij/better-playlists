@@ -111,10 +111,16 @@ class HoursCounter extends Component {
 
 class Filter extends Component {
   render() {
+    // input:
+    // onChange attribute is an on-event handler that calls onTextChange().
+    // onTextChange() is defined in the App component. It assigns text to
+    // the App's filterString state.
     return(
       <div style={ {defaultStyle} }>
         <img alt="Filter" />
-        <input type="text" name="" id=""/>
+        <input type="text" onChange={ event => 
+          this.props.onTextChange(event.target.value) 
+        }/>
         Filter
       </div>
     );
@@ -141,7 +147,8 @@ class App extends Component {
   constructor() {
     super();
     this.state = {
-      serverData: {}
+      serverData: {},
+      filterString: ''
     }
   }
 
@@ -151,7 +158,6 @@ class App extends Component {
         serverData: fakeServerData
       }), 1000
     );
-    
   }
 
   render() {
@@ -165,9 +171,14 @@ class App extends Component {
           </h1>
           <PlaylistCounter playlists={this.state.serverData.user.playlists} />
           <HoursCounter playlists={this.state.serverData.user.playlists} />
-          <Filter />
-          {
-            this.state.serverData.user.playlists.map(playlist => 
+          <Filter onTextChange={ text => this.setState({    // onTextChange() assigns received text to the filterString state
+            filterString: text
+          }) } />
+          { // Filtering logic
+            this.state.serverData.user.playlists.filter(playlist =>    // Array.filter() creates a new array of elements
+              playlist.name.toLowerCase().includes(                    // that respond 'true' to the return statement
+                this.state.filterString.toLowerCase())          
+            ).map(playlist =>     // Array.map() calls the provided callback function on each element in the array
               <Playlist playlist={playlist} />
             )
           }
