@@ -157,6 +157,7 @@ class App extends Component {
   componentDidMount() {
     const accessToken = new URLSearchParams(window.location.search).get('access_token');
     
+    // Cancels data fetch if user isn't logged in
     if (!accessToken) return;
     
     // Provide user name from user data via Spotify API
@@ -220,8 +221,12 @@ class App extends Component {
               <Playlist playlist={playlist} />
             ) 
           }
-        </div> : <button onClick={ () => window.location = 'http://localhost:8888/login'}
-                        style={{...defaultStyle, padding: '50px', fontSize: '2rem', marginTop: '2rem'}}>
+        </div> : <button onClick={ () => {
+                    window.location = window.location.href.includes('localhost') 
+                    ? 'http://localhost:8888/login'
+                    : 'https://rxnaij-project-playlists.herokuapp.com/login'
+                  }}
+                  style={{...defaultStyle, padding: '50px', fontSize: '2rem', marginTop: '2rem'}}>
                     Sign in with Spotify
                  </button>
         }
