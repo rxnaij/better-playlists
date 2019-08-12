@@ -131,9 +131,9 @@ class Playlist extends Component {
   render() {
     return(
       <div style={ {...defaultStyle, width: '25%', display: 'inline-block'} }>
-        <img src="" alt=""/>
+        <img src={this.props.playlist.imageUrl} style={{ width: '80%' }} alt=""/>
         <h3>{ this.props.playlist.name }</h3>
-        <ul>
+        <ul style={ {textAlign: 'left'} }>
           {this.props.playlist.songs.map( song =>
             <li>{song.name}</li>
           )}
@@ -147,17 +147,45 @@ class App extends Component {
   constructor() {
     super();
     this.state = {
-      serverData: {},
+      playlists: [],
       filterString: ''
     }
   }
 
+
+  // Fetches data once the component has loaded
   componentDidMount() {
-    setTimeout( () =>
+    const accessToken = new URLSearchParams(window.location.search).get('access_token');
+    
+    if (!accessToken) return;
+    
+    // Provide user name from user data via Spotify API
+    fetch('https://api.spotify.com/v1/me', {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    }).then(response => response.json())
+    .then(data => {
+      console.log(data)
       this.setState({
-        serverData: fakeServerData
-      }), 1000
-    );
+        user: {
+          name: data.display_name || data.id
+        }
+      }
+    )});
+
+    // Get user playlists via Spotify API
+    fetch('https://api.spotify.com/v1/me/playlists', {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    }).then(response => response.json())
+    .then(data => {
+      console.log(data);
+      this.setState({
+        playlists: data.items.map(item => ({
+          name: item.name, 
+          songs: [],
+          imageUrl: item.images[0].url
+        }))
+      });
+    });
   }
 
   render() {
@@ -166,22 +194,24 @@ class App extends Component {
     // Array.filter() creates a new array of elements that will respond 'true' to the
     // return statement.
     // Array.map() calls the provided callback function on each element in the array.
-    let playlistsToRender = this.state.serverData.user ? 
-      this.state.serverData.user.playlists
-      .filter(playlist =>
-        playlist.name.toLowerCase().includes(
-          this.state.filterString.toLowerCase()
-      )) : [];
+    let playlistsToRender = 
+      this.state.user && 
+      this.state.playlists
+        ? this.state.playlists.filter(playlist =>
+            playlist.name.toLowerCase().includes(
+              this.state.filterString.toLowerCase() )) 
+        : []
+    ;
     return (
       <div className="App">
-        {this.state.serverData.user ?    // checks if server data exists,
-                                         // renders the following JSX if true
+        { this.state.user ?    // checks if server data exists,
+                               // renders the following JSX if true
         <div>
-          <h1 style={ {...defaultStyle, "font-size": "54px"} }>
-            {this.state.serverData.user.name}'s Playlist
+          <h1 style={ {...defaultStyle, fontSize: "54px"} }>
+            {this.state.user.name}'s Playlist
           </h1>
-          <PlaylistCounter playlists={playlistsToRender} />
-          <HoursCounter playlists={playlistsToRender} />
+          <PlaylistCounter playlists={ playlistsToRender } />
+          <HoursCounter playlists={ playlistsToRender } />
           <Filter onTextChange={ text => this.setState({    // onTextChange() assigns received text to the filterString state
             filterString: text
           }) } />
@@ -190,7 +220,10 @@ class App extends Component {
               <Playlist playlist={playlist} />
             ) 
           }
-        </div> : <h1 style={defaultStyle}>Loading!</h1>
+        </div> : <button onClick={ () => window.location = 'http://localhost:8888/login'}
+                        style={{...defaultStyle, padding: '50px', fontSize: '2rem', marginTop: '2rem'}}>
+                    Sign in with Spotify
+                 </button>
         }
       </div>
     );
