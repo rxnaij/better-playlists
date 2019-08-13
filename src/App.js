@@ -103,7 +103,7 @@ class HoursCounter extends Component {
     }, 0);
     return(
       <div style={ {...defaultStyle, width: '40%', display: 'inline-block'} } >
-        <h2 style={ {defaultStyle} }>{ Math.floor(totalDuration / 3600) } Hours</h2> 
+        <h2 style={ {defaultStyle} }>{ Math.round(totalDuration / 60) } Hours</h2> 
       </div>
     );
   }
@@ -156,16 +156,14 @@ class App extends Component {
   // Fetches data once the component has loaded
   componentDidMount() {
     const accessToken = new URLSearchParams(window.location.search).get('access_token');
-    
     // Cancels data fetch if user isn't logged in
     if (!accessToken) return;
-    
+
     // Provide user name from user data via Spotify API
     fetch('https://api.spotify.com/v1/me', {
       headers: { 'Authorization': 'Bearer ' + accessToken }
     }).then(response => response.json())
     .then(data => {
-      console.log(data)
       this.setState({
         user: {
           name: data.display_name || data.id
@@ -177,14 +175,42 @@ class App extends Component {
     fetch('https://api.spotify.com/v1/me/playlists', {
       headers: { 'Authorization': 'Bearer ' + accessToken }
     }).then(response => response.json())
-    .then(data => {
-      console.log(data);
+    // Gets playlists' full track data from track URL
+    .then(playlistData => {
+      let playlists = playlistData.items; // All of a user's playlists
+      const trackDataPromises = playlists.map(playlist => { // Creates promises that fetch full track URLs for every playlist
+        return fetch(playlist.tracks.href, { // Fetches the URL containing full details of the playlist's tracks
+          headers: { 'Authorization': 'Bearer ' + accessToken }
+        })
+        .then(response => response.json());
+      });
+      /* Promise.all() takes an array of promises, executes them, and 
+        returns their resolutions. */
+      // Adds trackData to playlist data
+      return Promise.all(trackDataPromises) // Executes all promises in trackDataPromises
+        .then(trackData => { // Fills an array with all of the track URL data
+          trackData.forEach((data, i) => {
+            // Data filtering
+            playlists[i].trackData = data.items
+              .map(item => item.track) // extracts track data from track Objects in trackData
+              .map(track => ({
+                name: track.name,
+                duration: track.duration_ms / 1000
+              }));
+          });
+          return playlists;
+        });
+    })
+    .then(playlists => {
       this.setState({
-        playlists: data.items.map(item => ({
-          name: item.name, 
-          songs: [],
-          imageUrl: item.images[0].url
-        }))
+        playlists: playlists.map(playlist => {
+          console.log(playlist.trackData);
+          return {
+            name: playlist.name, 
+            songs: playlist.trackData.slice(0,3),
+            imageUrl: playlist.images[0].url
+          };
+        })
       });
     });
   }
