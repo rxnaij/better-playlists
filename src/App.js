@@ -103,7 +103,10 @@ class HoursCounter extends Component {
     }, 0);
     return(
       <div style={ {...defaultStyle, width: '40%', display: 'inline-block'} } >
-        <h2 style={ {defaultStyle} }>{ Math.round(totalDuration / 60) } Hours</h2> 
+        { Math.floor(totalDuration / 3600) < 1
+          ? <h2>{Math.floor(totalDuration / 60)} Minutes</h2>
+          : <h2>{Math.floor(totalDuration / 3600)} Hours</h2>
+        }
       </div>
     );
   }
@@ -134,7 +137,7 @@ class Playlist extends Component {
         <img src={this.props.playlist.imageUrl} style={{ width: '80%' }} alt=""/>
         <h3>{ this.props.playlist.name }</h3>
         <ul style={ {textAlign: 'left'} }>
-          {this.props.playlist.songs.map( song =>
+          {this.props.playlist.songs.slice(0,3).map( song =>
             <li>{song.name}</li>
           )}
         </ul>
@@ -204,10 +207,9 @@ class App extends Component {
     .then(playlists => {
       this.setState({
         playlists: playlists.map(playlist => {
-          console.log(playlist.trackData);
           return {
             name: playlist.name, 
-            songs: playlist.trackData.slice(0,3),
+            songs: playlist.trackData,
             imageUrl: playlist.images[0].url
           };
         })
@@ -224,9 +226,15 @@ class App extends Component {
     let playlistsToRender = 
       this.state.user && 
       this.state.playlists
-        ? this.state.playlists.filter(playlist =>
-            playlist.name.toLowerCase().includes(
-              this.state.filterString.toLowerCase() )) 
+        ? this.state.playlists.filter(playlist => {
+            let matchesPlaylist = playlist.name.toLowerCase().includes(
+              this.state.filterString.toLowerCase());
+            let matchesVisibleSongs = playlist.songs.slice(0,3).find(
+              song => song.name.toLowerCase().includes(
+                this.state.filterString.toLowerCase())
+            );
+            return matchesPlaylist || matchesVisibleSongs;
+          })
         : []
     ;
     return (
